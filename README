@@ -16,6 +16,14 @@ JENKINS_URL      - the jenkins server to use
 
 EXAMPLES
 
+With Params:
+
 export JENKINS_URL = "https://foo" ./jenkins-runner run myjob '{"BRANCH": "master"}'
+
+Without Params:
+
+export JENKINS_URL = "https://foo" ./jenkins-runner run myjob '{}'
+
+Get Help:
 
 ./jenkins-runner help

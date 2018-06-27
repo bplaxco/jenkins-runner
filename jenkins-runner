@@ -108,9 +108,8 @@ if __name__ == "__main__":
     try:
         getattr(runner, "cmd_" + command)()
     except Exception as e:
-        print e
         print "Commands:"
-        for k in runner.__dict__.keys():
+        for k in dir(runner):
             if k.startswith("cmd_"):
-                print k.replace("cmd_", "* ") + "\t- " + getattr(runner, k).__doc__
+                print k.replace("cmd_", "* ") + " - " + getattr(runner, k).__doc__
 
