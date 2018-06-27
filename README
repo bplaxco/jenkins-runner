@@ -1,0 +1,21 @@
+                                Jenkins Runner
+
+
+DESCRIPTION
+
+Run jobs and wait until they finish. This is mainly a little utility script
+for my Makefiles.
+
+
+ENV VARS
+
+JENKINS_USERNAME - your username to login with
+JENKINS_PASSWORD - your passwordto login with
+JENKINS_URL      - the jenkins server to use
+
+
+EXAMPLES
+
+export JENKINS_URL = "https://foo" ./jenkins-runner run myjob '{"BRANCH": "master"}'
+
+./jenkins-runner help
