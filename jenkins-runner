@@ -12,9 +12,9 @@ import sys
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 class JenkinsRunner(object):
-    base_url = os.environ.get("JENKINS_URL") or raw_input("JENKINS_URL not set please enter it here: ")
-    username = os.environ.get("JENKINS_USERNAME") or raw_input("JENKINS_USERNAME not set please provide it here: ")
-    password = os.environ.get("JENKINS_PASSWORD") or raw_input("JENKINS_PASSWORD not set please provide it here: ")
+    base_url = os.environ.get("JENKINS_URL")
+    username = os.environ.get("JENKINS_USERNAME")
+    password = os.environ.get("JENKINS_PASSWORD")
     auth = HTTPBasicAuth(username, password)
     crumb = None
     verify = False
