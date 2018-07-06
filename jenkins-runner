@@ -136,7 +136,7 @@ if __name__ == "__main__":
             os.environ.get("JENKINS_PASSWORD"),
         )
     )).run(Command(
-        name=get_arg(1, "list"),
+        name=get_arg(1, "help"),
         job_name=get_arg(2, ""),
         parameters=json.loads(get_arg(3, '{}')),
     )))
