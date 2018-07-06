@@ -11,105 +11,132 @@ import sys
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-class JenkinsRunner(object):
-    base_url = os.environ.get("JENKINS_URL")
-    username = os.environ.get("JENKINS_USERNAME")
-    password = os.environ.get("JENKINS_PASSWORD")
-    auth = HTTPBasicAuth(username, password)
-    crumb = None
-    verify = False
 
-    def get_crumb(self):
-        if not self.crumb:
-            self.crumb = self.get("/crumbIssuer/api/json")['crumb']
-        return self.crumb
+class Command(object):
+    def __init__(self, name="", job_name="", parameters={}):
+        self.name = name
+        self.job_name = job_name
+        self.parameters = { "parameter": [
+            {"name": k, "value": v}
+            for k, v in parameters.items()
+        ]}
 
-    def get(self, path):
-        resp = requests.get(self.base_url + path, verify=self.verify, auth=self.auth)
 
-        if not str(resp.status_code).startswith("20"):
-            raise Exception(resp.text)
+class JenkinsApiClient(object):
+    __crumb = None
+    __jobs_path = "/api/json?tree=jobs[name,order]"
+    __status_path = "/job/%s/lastBuild/api/json?tree=result"
+    __last_build_path = "/job/%s/lastBuild/api/json"
+    __job_build_path = "/job/%s/build"
+    __curmb_path = "/crumbIssuer/api/json"
 
-        return resp.json()
+    def __init__(self, base_url, verify=True, auth=None):
+        self.__base_url = base_url
+        self.__verify = verify
+        self.__auth = auth
 
-    def post(self, path, **kwargs):
-        resp = requests.post(self.base_url + path, verify=self.verify, auth=self.auth, headers={
-            "Jenkins-Crumb": self.get_crumb(),
-        }, **kwargs)
+    def _get_crumb(self):
+        if not self.__crumb:
+            self.__crumb = self.get(self.__crumb_path)['crumb']
+        return self.__crumb
 
-        if not str(resp.status_code).startswith("20"):
-            raise Exception(resp.text)
+    def _get(self, path):
+        return requests.get(
+            self.__base_url + path,
+            verify=self.__verify,
+            auth=self.__auth,
+        ).json()
 
-        try:
-            return resp.json()
-        except:
-            return resp.text
+    def _post(self, path, **kwargs):
+        requests.post(
+            self.__base_url + path,
+            verify=self.__verify,
+            auth=self.__auth,
+            headers={"Jenkins-Crumb": self._get_crumb()},
+            **kwargs
+        )
 
     def get_jobs(self):
-        return [
-            j["name"]
-            for j in self.get("/api/json?tree=jobs[name,order]")["jobs"]
-        ]
+        return [j["name"] for j in self._get(self.__jobs_path)["jobs"]]
 
-    def get_status(self, job):
-        return self.get("/job/" + job + "/lastBuild/api/json?tree=result")["result"]
+    def get_result(self, job):
+        return self._get(self.__status_path % job)["result"]
 
-    def wait(self, job):
-        while self.get("/job/" + job + "/lastBuild/api/json")["building"]:
+    def is_building(self, job):
+        return self._get(self.__last_build_path % job)["building"]
+
+    def build(self, job, parameters):
+        self._post(self.__job_build_path % job, data={
+            "json": json.dumps(parameters)
+        })
+
+
+class JenkinsRunner(object):
+    def __init__(self, api_client):
+        self.__api = api_client
+
+    def cmd_list(self, cmd):
+        """jenkins-runner list"""
+        print "\n".join(self.__api.get_jobs())
+        return 0
+
+    def cmd_run(self, cmd):
+        """jenkins-runner <job> {name: value, name: value, ...}"""
+
+        if cmd["job_name"] not in self.__api.get_jobs():
+            print cmd.job_name + " is not a valid job"
+            return 1
+
+        self.cmd_wait(cmd)
+        self.__api.build(cmd.job_name, cmd.parameters)
+        print "New Job Started! Waiting for the job to finish..."
+        self.cmd_wait(cmd)
+        return self.cmd_result(cmd)
+
+    def cmd_result(self, cmd):
+        """jenkins-runner result <job>"""
+        result = self.__api.get_result(cmd.job_name)
+        print "Result: " + result
+        return int(result != "SUCCESS")
+
+    def cmd_wait(self, cmd):
+        """jenkins-runner wait <job>"""
+        print "Waiting for the job to finish.."
+
+        while self.__api.is_building(cmd.job_name):
             print "waiting..."
             sleep(1)
 
-    def cmd_list(self):
-        """List out the jobs"""
-        print "\n".join(self.get_jobs())
+    def cmd_help(self, cmd):
+        """jenkins-runner help"""
 
-    def cmd_run(self):
-        """jenkins-runner <job> {params: here}"""
+        print "Commands:"
 
-        if sys.argv[2] not in self.get_jobs():
-            print job + " is not a valid job"
-            return
+        for k in dir(self):
+            if k.startswith("cmd_"):
+                print "* %-6s - %s" % (
+                    k.replace("cmd_", ""),
+                    str(getattr(self, k).__doc__ or "")
+                )
 
-        print "Making sure the job isn't already running..."
-        self.wait(sys.argv[2])
-        print "Okay you're good to go"
-
-        self.post("/job/"+sys.argv[2]+"/build", data={
-            "json": json.dumps({
-                "parameter": [
-                    {"name": name, "value": value }
-                    for name, value in json.loads(sys.argv[3]).items()
-                ]
-            })
-        })
-
-        print "Job Started! Waiting for the job to finish..."
-        self.wait(sys.argv[2])
-        status = self.get_status(sys.argv[2])
-        self.cmd_status()
-
-    def cmd_status(self):
-        """jenkins-runner status <job>"""
-        status = self.get_status(sys.argv[2])
-        print status
-        sys.exit(0 if status == "SUCCESS" else 1)
-
-    def cmd_wait(self):
-        """jenkins-runner wait <job>"""
-        print "Waiting for the job to finish.."
-        self.wait(sys.argv[2])
-        print "Status: " + self.get_status(sys.argv[2])
+    def run(self, cmd):
+        return getattr(self, "cmd_" + cmd.name, self.cmd_help)(cmd)
 
 
 if __name__ == "__main__":
-    runner = JenkinsRunner()
-    command = "list" if len(sys.argv) == 1 else sys.argv[1]
+    get_arg = lambda index, default, argc=len(sys.argv): (
+        sys.argv[index] if argc > index else default
+    )
 
-    try:
-        getattr(runner, "cmd_" + command)()
-    except Exception as e:
-        print "Commands:"
-        for k in dir(runner):
-            if k.startswith("cmd_"):
-                print k.replace("cmd_", "* ") + " - " + getattr(runner, k).__doc__
-
+    sys.exit(JenkinsRunner(JenkinsApiClient(
+        base_url=os.environ.get("JENKINS_URL"),
+        verify=False,
+        auth=HTTPBasicAuth(
+            os.environ.get("JENKINS_USERNAME"),
+            os.environ.get("JENKINS_PASSWORD"),
+        )
+    )).run(Command(
+        name=get_arg(1, "list"),
+        job_name=get_arg(2, ""),
+        parameters=json.loads(get_arg(3, '{}')),
+    )))
