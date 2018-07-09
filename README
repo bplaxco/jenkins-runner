@@ -9,21 +9,21 @@ for my Makefiles.
 
 ENV VARS
 
-JENKINS_USERNAME - your username to login with
-JENKINS_PASSWORD - your passwordto login with
-JENKINS_URL      - the jenkins server to use
+JENKINS_USERNAME - Your Jenkins username
+JENKINS_PASSWORD - Your Jenkins password
+JENKINS_URL      - The URL for the Jenkins server
 
 
 EXAMPLES
-
-With Params:
-
-export JENKINS_URL = "https://foo" ./jenkins-runner run myjob '{"BRANCH": "master"}'
 
 Without Params:
 
 export JENKINS_URL = "https://foo" ./jenkins-runner run myjob
 
-Get Help:
+With Params:
+
+export JENKINS_URL = "https://foo" ./jenkins-runner run myjob '{"BRANCH": "master"}'
+
+View Other Commands:
 
 ./jenkins-runner help
