@@ -89,7 +89,7 @@ class JenkinsRunner(object):
 
         self.cmd_wait(cmd)
         self.__api.build(cmd.job_name, cmd.parameters)
-        print "New Job Started! Waiting for the job to finish..."
+        print "New Job Started!"
         self.cmd_wait(cmd)
         return self.cmd_result(cmd)
 
