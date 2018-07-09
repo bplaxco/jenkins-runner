@@ -83,7 +83,7 @@ class JenkinsRunner(object):
     def cmd_run(self, cmd):
         """jenkins-runner <job> {name: value, name: value, ...}"""
 
-        if cmd["job_name"] not in self.__api.get_jobs():
+        if cmd.job_name not in self.__api.get_jobs():
             print cmd.job_name + " is not a valid job"
             return 1
 

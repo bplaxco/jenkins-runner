@@ -22,7 +22,7 @@ export JENKINS_URL = "https://foo" ./jenkins-runner run myjob '{"BRANCH": "maste
 
 Without Params:
 
-export JENKINS_URL = "https://foo" ./jenkins-runner run myjob '{}'
+export JENKINS_URL = "https://foo" ./jenkins-runner run myjob
 
 Get Help:
 
