@@ -28,7 +28,7 @@ class JenkinsApiClient(object):
     __status_path = "/job/%s/lastBuild/api/json?tree=result"
     __last_build_path = "/job/%s/lastBuild/api/json"
     __job_build_path = "/job/%s/build"
-    __curmb_path = "/crumbIssuer/api/json"
+    __crumb_path = "/crumbIssuer/api/json"
 
     def __init__(self, base_url, verify=True, auth=None):
         self.__base_url = base_url
@@ -37,7 +37,7 @@ class JenkinsApiClient(object):
 
     def _get_crumb(self):
         if not self.__crumb:
-            self.__crumb = self.get(self.__crumb_path)['crumb']
+            self.__crumb = self._get(self.__crumb_path)['crumb']
         return self.__crumb
 
     def _get(self, path):
@@ -106,7 +106,7 @@ class JenkinsRunner(object):
             sys.stdout.write('.')
             sys.stdout.flush()
             sleep(5)
-        print "\nDone!"
+        print "Done!"
 
     def cmd_help(self, cmd):
         """jenkins-runner help"""
