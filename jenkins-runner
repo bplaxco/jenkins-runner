@@ -32,8 +32,14 @@ class JenkinsApiClient(object):
 
     def __init__(self, base_url, verify=True, auth=None):
         self.__base_url = base_url
-        self.__verify = verify
         self.__auth = auth
+
+        if verify == None:
+            self.__verify = True
+        elif verify.lower() == "false":
+            self.__verify = False
+        else:
+            self.__verify = verify
 
     def _get_crumb(self):
         if not self.__crumb:
@@ -89,7 +95,7 @@ class JenkinsRunner(object):
 
         self.cmd_wait(cmd)
         self.__api.build(cmd.job_name, cmd.parameters)
-        print "New Job Started!"
+        print "Started '%s'!" % cmd.job_name
         self.cmd_wait(cmd)
         return self.cmd_result(cmd)
 
@@ -131,7 +137,7 @@ if __name__ == "__main__":
 
     sys.exit(JenkinsRunner(JenkinsApiClient(
         base_url=os.environ.get("JENKINS_URL"),
-        verify=False,
+        verify=os.environ.get("JENKINS_VERIFY"),
         auth=HTTPBasicAuth(
             os.environ.get("JENKINS_USERNAME"),
             os.environ.get("JENKINS_PASSWORD"),

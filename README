@@ -12,6 +12,7 @@ ENV VARS
 JENKINS_USERNAME - Your Jenkins username
 JENKINS_PASSWORD - Your Jenkins password
 JENKINS_URL      - The URL for the Jenkins server
+JENKINS_VERIFY   - SSL verification (blank = true, false = false, or path to cert)
 
 
 EXAMPLES
