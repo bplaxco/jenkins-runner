@@ -29,6 +29,7 @@ class JenkinsApiClient(object):
     __last_build_path = "/job/%s/lastBuild/api/json"
     __job_build_path = "/job/%s/build"
     __crumb_path = "/crumbIssuer/api/json"
+    __max_get_retry = 3
 
     def __init__(self, base_url, verify=True, auth=None):
         self.__base_url = base_url
@@ -40,12 +41,20 @@ class JenkinsApiClient(object):
             self.__crumb = self._get(self.__crumb_path)['crumb']
         return self.__crumb
 
-    def _get(self, path):
-        return requests.get(
-            self.__base_url + path,
-            verify=self.__verify,
-            auth=self.__auth,
-        ).json()
+    def _get(self, path, count=0):
+        try:
+            return requests.get(
+                self.__base_url + path,
+                verify=self.__verify,
+                auth=self.__auth,
+            ).json()
+        except requests.exceptions.ConnectionError as e:
+            if count >= self.__max_get_retry:
+                raise e
+            else:
+                print("Connection Failed: Trying again in 1 second...")
+                sleep(1)
+                return self._get(path, count=count+1)
 
     def _post(self, path, **kwargs):
         requests.post(
