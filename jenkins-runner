@@ -130,7 +130,10 @@ class JenkinsRunner(object):
                 )
 
     def run(self, cmd):
-        return getattr(self, "cmd_" + cmd.name, self.cmd_help)(cmd)
+        try:
+            return getattr(self, "cmd_" + cmd.name, self.cmd_help)(cmd)
+        except KeyboardInterrupt:
+            return 1
 
 
 if __name__ == "__main__":
