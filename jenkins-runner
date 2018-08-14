@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
@@ -86,48 +86,48 @@ class JenkinsRunner(object):
 
     def cmd_list(self, cmd):
         """jenkins-runner list"""
-        print "\n".join(self.__api.get_jobs())
+        print("\n".join(self.__api.get_jobs()))
         return 0
 
     def cmd_run(self, cmd):
         """jenkins-runner <job> {name: value, name: value, ...}"""
 
         if cmd.job_name not in self.__api.get_jobs():
-            print cmd.job_name + " is not a valid job"
+            print(cmd.job_name + " is not a valid job")
             return 1
 
         self.cmd_wait(cmd)
         self.__api.build(cmd.job_name, cmd.parameters)
-        print "New Job Started!"
+        print("New Job Started!")
         self.cmd_wait(cmd)
         return self.cmd_result(cmd)
 
     def cmd_result(self, cmd):
         """jenkins-runner result <job>"""
         result = self.__api.get_result(cmd.job_name)
-        print "Result: " + result
+        print("Result: " + result)
         return int(result != "SUCCESS")
 
     def cmd_wait(self, cmd):
         """jenkins-runner wait <job>"""
-        print "Waiting for '%s' to finish..." % cmd.job_name
+        print("Waiting for '%s' to finish..." % cmd.job_name)
         while self.__api.is_building(cmd.job_name):
             sys.stdout.write('.')
             sys.stdout.flush()
             sleep(5)
-        print "Done!"
+        print("Done!")
 
     def cmd_help(self, cmd):
         """jenkins-runner help"""
 
-        print "Commands:"
+        print("Commands:")
 
         for k in dir(self):
             if k.startswith("cmd_"):
-                print "* %-6s - %s" % (
+                print("* %-6s - %s" % (
                     k.replace("cmd_", ""),
                     str(getattr(self, k).__doc__ or "")
-                )
+                ))
 
     def run(self, cmd):
         try:
@@ -137,9 +137,8 @@ class JenkinsRunner(object):
 
 
 if __name__ == "__main__":
-    get_arg = lambda index, default, argc=len(sys.argv): (
-        sys.argv[index] if argc > index else default
-    )
+    def get_arg(index, default, argc=len(sys.argv)):
+        return sys.argv[index] if argc > index else default
 
     sys.exit(JenkinsRunner(JenkinsApiClient(
         base_url=os.environ.get("JENKINS_URL"),
