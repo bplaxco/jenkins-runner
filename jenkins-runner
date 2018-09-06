@@ -111,6 +111,7 @@ class JenkinsRunner(object):
     def cmd_wait(self, cmd):
         """jenkins-runner wait <job>"""
         print("Waiting for '%s' to finish..." % cmd.job_name)
+        sleep(1)
         while self.__api.is_building(cmd.job_name):
             sys.stdout.write('.')
             sys.stdout.flush()
