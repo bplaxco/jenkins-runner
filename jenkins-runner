@@ -3,6 +3,7 @@
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from time import sleep
+from urllib.parse import urlparse
 import json
 import os
 import requests
@@ -38,7 +39,13 @@ class JenkinsApiClient(object):
 
     def _get_crumb(self):
         if not self.__crumb:
-            self.__crumb = self._get(self.__crumb_path)['crumb']
+            # Use base hostname for crumb lookup
+            parsed = urlparse(self.__base_url)
+            self.__crumb = requests.get(
+                ("%s://%s" % (parsed.scheme, parsed.netloc)) + self.__crumb_path,
+                verify=self.__verify,
+                auth=self.__auth,
+            ).json()["crumb"]
         return self.__crumb
 
     def _get(self, path, count=0):
@@ -111,7 +118,7 @@ class JenkinsRunner(object):
     def cmd_wait(self, cmd):
         """jenkins-runner wait <job>"""
         print("Waiting for '%s' to finish..." % cmd.job_name)
-        sleep(5)
+        sleep(10)
         while self.__api.is_building(cmd.job_name):
             sys.stdout.write('.')
             sys.stdout.flush()
