@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+from getpass import getpass
 from requests.auth import HTTPBasicAuth
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from time import sleep
@@ -152,8 +153,8 @@ if __name__ == "__main__":
         base_url=os.environ.get("JENKINS_URL"),
         verify=False,
         auth=HTTPBasicAuth(
-            os.environ.get("JENKINS_USERNAME"),
-            os.environ.get("JENKINS_PASSWORD"),
+            os.environ.get("JENKINS_USERNAME") or input("JENKINS_USERNAME: "),
+            os.environ.get("JENKINS_PASSWORD") or getpass("JENKINS_PASSWORD: "),
         )
     )).run(Command(
         name=get_arg(1, "help"),
