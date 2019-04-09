@@ -56,7 +56,7 @@ class JenkinsApiClient(object):
                 verify=self.__verify,
                 auth=self.__auth,
             ).json()
-        except requests.exceptions.ConnectionError as e:
+        except Exception as e:
             if count >= self.__max_get_retry:
                 raise e
             else:
