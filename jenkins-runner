@@ -60,7 +60,7 @@ class JenkinsApiClient(object):
             if count >= self.__max_get_retry:
                 raise e
             else:
-                print("Connection Failed: Trying again in 1 second...")
+                print("Request Failed: Trying again in 1 second...")
                 sleep(1)
                 return self._get(path, count=count+1)
 
