@@ -1,15 +1,19 @@
 #! /usr/bin/env python3
 
 from getpass import getpass
-from requests.auth import HTTPBasicAuth
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from time import sleep
 from urllib.parse import urlparse
 import json
 import os
-import requests
 import sys
 
+try:
+    from requests.auth import HTTPBasicAuth
+    from requests.packages.urllib3.exceptions import InsecureRequestWarning
+    import requests
+except:
+    print("python3 requests required: python3 -m pip install --user requests")
+    sys.exit(1)
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
