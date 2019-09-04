@@ -30,32 +30,42 @@ class Command(object):
 
 class JenkinsApiClient(object):
     __crumb = None
+    __crumb_field = None
     __jobs_path = "/api/json?tree=jobs[name,order]"
     __status_path = "/job/%s/lastBuild/api/json?tree=result"
     __last_build_path = "/job/%s/lastBuild/api/json"
     __job_build_path = "/job/%s/build"
     __crumb_path = "/crumbIssuer/api/json"
     __max_get_retry = 3
+    __session = None
 
     def __init__(self, base_url, verify=True, auth=None):
         self.__base_url = base_url
         self.__verify = verify
         self.__auth = auth
+        self.__session = requests.session()
 
     def _get_crumb(self):
         if not self.__crumb:
             # Use base hostname for crumb lookup
             parsed = urlparse(self.__base_url)
-            self.__crumb = requests.get(
+            crumb_info = self.__session.get(
                 ("%s://%s" % (parsed.scheme, parsed.netloc)) + self.__crumb_path,
                 verify=self.__verify,
                 auth=self.__auth,
-            ).json()["crumb"]
+            ).json()
+            self.__crumb_field = crumb_info['crumbRequestField']
+            self.__crumb = crumb_info['crumb']
         return self.__crumb
+
+    def _get_crumb_field(self):
+        if not self.__crumb_field:
+            self._get_crumb()
+        return self.__crumb_field
 
     def _get(self, path, count=0):
         try:
-            return requests.get(
+            return self.__session.get(
                 self.__base_url + path,
                 verify=self.__verify,
                 auth=self.__auth,
@@ -69,11 +79,11 @@ class JenkinsApiClient(object):
                 return self._get(path, count=count+1)
 
     def _post(self, path, **kwargs):
-        requests.post(
+        return self.__session.post(
             self.__base_url + path,
             verify=self.__verify,
             auth=self.__auth,
-            headers={"Jenkins-Crumb": self._get_crumb()},
+            headers={self._get_crumb_field(): self._get_crumb()},
             **kwargs
         )
 
@@ -88,7 +98,7 @@ class JenkinsApiClient(object):
 
     def build(self, job, parameters):
         self._post(self.__job_build_path % job, data={
-            "json": json.dumps(parameters)
+            "json": json.dumps(parameters),
         })
 
 
