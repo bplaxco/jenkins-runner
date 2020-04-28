@@ -124,8 +124,12 @@ class JenkinsRunner(object):
         self.__api.build(cmd.job_name, cmd.parameters)
         print("New Job Started!")
         self.cmd_wait(cmd)
-        self.cmd_logs(cmd)
-        return self.cmd_result(cmd)
+        result_status = self.cmd_result(cmd)
+
+        if result_status:
+            self.cmd_logs(cmd)
+
+        return result_status
 
     def cmd_logs(self, cmd):
         """jenkins-runner logs <job>"""
