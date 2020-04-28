@@ -22,10 +22,9 @@ class Command(object):
     def __init__(self, name="", job_name="", parameters={}):
         self.name = name
         self.job_name = job_name
-        self.parameters = { "parameter": [
-            {"name": k, "value": v}
-            for k, v in parameters.items()
-        ]}
+        self.parameters = {
+            "parameter": [{"name": k, "value": v} for k, v in parameters.items()]
+        }
 
 
 class JenkinsApiClient(object):
@@ -36,6 +35,7 @@ class JenkinsApiClient(object):
     __last_build_path = "/job/%s/lastBuild/api/json"
     __job_build_path = "/job/%s/build"
     __crumb_path = "/crumbIssuer/api/json"
+    __log_path = "/job/%s/%s/consoleText"
     __max_get_retry = 3
     __session = None
 
@@ -54,8 +54,8 @@ class JenkinsApiClient(object):
                 verify=self.__verify,
                 auth=self.__auth,
             ).json()
-            self.__crumb_field = crumb_info['crumbRequestField']
-            self.__crumb = crumb_info['crumb']
+            self.__crumb_field = crumb_info["crumbRequestField"]
+            self.__crumb = crumb_info["crumb"]
         return self.__crumb
 
     def _get_crumb_field(self):
@@ -63,21 +63,21 @@ class JenkinsApiClient(object):
             self._get_crumb()
         return self.__crumb_field
 
-    def _get(self, path, count=0):
+    def _get(self, path, count=0, fmt="json"):
         try:
-            return self.__session.get(
-                self.__base_url + path,
-                verify=self.__verify,
-                auth=self.__auth,
-            ).json()
+            resp = self.__session.get(
+                self.__base_url + path, verify=self.__verify, auth=self.__auth,
+            )
+            content = getattr(resp, fmt)
+            return content() if hasattr(content, "__call__") else content
         except Exception as e:
             if count >= self.__max_get_retry:
                 raise e
             else:
-                sys.stdout.write('F')
+                sys.stdout.write("F")
                 sys.stdout.flush()
                 sleep(1)
-                return self._get(path, count=count+1)
+                return self._get(path, count=count + 1)
 
     def _post(self, path, **kwargs):
         return self.__session.post(
@@ -97,10 +97,11 @@ class JenkinsApiClient(object):
     def is_building(self, job):
         return self._get(self.__last_build_path % job)["building"]
 
+    def get_logs(self, job, job_number):
+        return self._get(self.__log_path % (job, job_number), fmt="text")
+
     def build(self, job, parameters):
-        self._post(self.__job_build_path % job, data={
-            "json": json.dumps(parameters),
-        })
+        self._post(self.__job_build_path % job, data={"json": json.dumps(parameters),})
 
 
 class JenkinsRunner(object):
@@ -123,7 +124,14 @@ class JenkinsRunner(object):
         self.__api.build(cmd.job_name, cmd.parameters)
         print("New Job Started!")
         self.cmd_wait(cmd)
+        self.cmd_logs(cmd)
         return self.cmd_result(cmd)
+
+    def cmd_logs(self, cmd):
+        """jenkins-runner logs <job>"""
+        print("\nLogs:\n")
+        print(self.__api.get_logs(cmd.job_name, "lastBuild"))
+        return 0
 
     def cmd_result(self, cmd):
         """jenkins-runner result <job>"""
@@ -136,7 +144,7 @@ class JenkinsRunner(object):
         print("Waiting for '%s' to finish..." % cmd.job_name)
         sleep(10)
         while self.__api.is_building(cmd.job_name):
-            sys.stdout.write('.')
+            sys.stdout.write(".")
             sys.stdout.flush()
             sleep(5)
         print("Done!")
@@ -148,10 +156,10 @@ class JenkinsRunner(object):
 
         for k in dir(self):
             if k.startswith("cmd_"):
-                print("* %-6s - %s" % (
-                    k.replace("cmd_", ""),
-                    str(getattr(self, k).__doc__ or "")
-                ))
+                print(
+                    "* %-6s - %s"
+                    % (k.replace("cmd_", ""), str(getattr(self, k).__doc__ or ""))
+                )
 
     def run(self, cmd):
         try:
@@ -161,18 +169,25 @@ class JenkinsRunner(object):
 
 
 if __name__ == "__main__":
+
     def get_arg(index, default, argc=len(sys.argv)):
         return sys.argv[index] if argc > index else default
 
-    sys.exit(JenkinsRunner(JenkinsApiClient(
-        base_url=os.environ.get("JENKINS_URL"),
-        verify=False,
-        auth=HTTPBasicAuth(
-            os.environ.get("JENKINS_USERNAME") or input("JENKINS_USERNAME: "),
-            os.environ.get("JENKINS_PASSWORD") or getpass("JENKINS_PASSWORD: "),
+    sys.exit(
+        JenkinsRunner(
+            JenkinsApiClient(
+                base_url=os.environ.get("JENKINS_URL"),
+                verify=False,
+                auth=HTTPBasicAuth(
+                    os.environ.get("JENKINS_USERNAME") or input("JENKINS_USERNAME: "),
+                    os.environ.get("JENKINS_PASSWORD") or getpass("JENKINS_PASSWORD: "),
+                ),
+            )
+        ).run(
+            Command(
+                name=get_arg(1, "help"),
+                job_name=get_arg(2, ""),
+                parameters=json.loads(get_arg(3, "{}")),
+            )
         )
-    )).run(Command(
-        name=get_arg(1, "help"),
-        job_name=get_arg(2, ""),
-        parameters=json.loads(get_arg(3, '{}')),
-    )))
+    )
