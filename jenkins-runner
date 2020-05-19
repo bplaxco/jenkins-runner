@@ -184,7 +184,9 @@ if __name__ == "__main__":
                 verify=False,
                 auth=HTTPBasicAuth(
                     os.environ.get("JENKINS_USERNAME") or input("JENKINS_USERNAME: "),
-                    os.environ.get("JENKINS_PASSWORD") or getpass("JENKINS_PASSWORD: "),
+                    os.environ.get("JENKINS_TOKEN")
+                    or os.environ.get("JENKINS_PASSWORD")
+                    or getpass("JENKINS_PASSWORD: "),
                 ),
             )
         ).run(
