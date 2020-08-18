@@ -9,10 +9,11 @@ for my Makefiles.
 
 ENV VARS
 
-JENKINS_USERNAME - Jenkins username
-JENKINS_TOKEN    - Jenkins api token (favored over password)
-JENKINS_PASSWORD - Jenkins password  (if token not set)
-JENKINS_URL      - Jenkins server url
+JENKINS_USERNAME      - Jenkins username
+JENKINS_TOKEN         - Jenkins api token (favored over password)
+JENKINS_PASSWORD      - Jenkins password  (if token not set)
+JENKINS_URL           - Jenkins url for where the jobs are
+JENKINS_CONTEXT_ROOT  - Jenkins server context root
 
 
 EXAMPLES
