@@ -39,18 +39,19 @@ class JenkinsApiClient(object):
     __max_get_retry = 3
     __session = None
 
-    def __init__(self, base_url, verify=True, auth=None):
+    def __init__(self, base_url, verify=True, auth=None, context_root=""):
         self.__base_url = base_url
         self.__verify = verify
         self.__auth = auth
         self.__session = requests.session()
+        self.__context_root = context_root
 
     def _get_crumb(self):
         if not self.__crumb:
             # Use base hostname for crumb lookup
             parsed = urlparse(self.__base_url)
             crumb_info = self.__session.get(
-                ("%s://%s" % (parsed.scheme, parsed.netloc)) + self.__crumb_path,
+                ("%s://%s" % (parsed.scheme, parsed.netloc)) + self.__context_root + self.__crumb_path,
                 verify=self.__verify,
                 auth=self.__auth,
             ).json()
@@ -182,6 +183,7 @@ if __name__ == "__main__":
             JenkinsApiClient(
                 base_url=os.environ.get("JENKINS_URL"),
                 verify=False,
+                context_root=os.environ.get("JENKINS_CONTEXT_ROOT"),
                 auth=HTTPBasicAuth(
                     os.environ.get("JENKINS_USERNAME") or input("JENKINS_USERNAME: "),
                     os.environ.get("JENKINS_TOKEN")
