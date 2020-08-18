@@ -44,7 +44,7 @@ class JenkinsApiClient(object):
         self.__verify = verify
         self.__auth = auth
         self.__session = requests.session()
-        self.__context_root = context_root
+        self.__context_root = context_root or ""
 
     def _get_crumb(self):
         if not self.__crumb:
